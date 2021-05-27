@@ -1,16 +1,10 @@
 package problem.book.client.v10.guis.utilities;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import problem.book.client.v10.dtos.RegisterDTO;
+import problem.book.client.v10.dtos.*;
 
-import java.io.IOException;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import javax.xml.crypto.Data;
+
 
 /**
  * Public class that queries the Problem Book Controller for information stored in the database.
@@ -18,6 +12,8 @@ import java.net.http.HttpResponse;
 public class DatabaseLinker {
     private static DatabaseLinker instance = null;
     private static final RestTemplate restTemplate = new RestTemplate();
+
+    private DatabaseLinker() {}
 
     public static DatabaseLinker getInstance() {
         if (instance == null)
@@ -27,6 +23,25 @@ public class DatabaseLinker {
 
     public Integer addStudent(RegisterDTO student) {
         return restTemplate.postForObject("https://problem-book-database.herokuapp.com/student/register", student, Integer.class);
+    }
 
+    public LoggedInDTO loginStudent(LoginDTO student) {
+        return restTemplate.postForObject("https://problem-book-database.herokuapp.com/student/login", student, LoggedInDTO.class);
+    }
+
+    public Integer addTeacher(RegisterDTO teacher) {
+        return restTemplate.postForObject("https://problem-book-database.herokuapp.com/teacher/register", teacher, Integer.class);
+    }
+
+    public LoggedInDTO loginTeacher(LoginDTO teacher) {
+        return restTemplate.postForObject("https://problem-book-database.herokuapp.com/teacher/login", teacher, LoggedInDTO.class);
+    }
+
+    public AvatarDTO getAvatarForId(Integer id) {
+        var response = restTemplate.getForEntity("https://problem-book-database.herokuapp.com/avatar/?id=" + id, AvatarDTO.class);
+        if (response.getStatusCodeValue() == 200) {
+            return response.getBody();
+        }
+        return null;
     }
 }

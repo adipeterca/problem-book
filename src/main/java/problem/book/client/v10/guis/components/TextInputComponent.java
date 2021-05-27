@@ -42,9 +42,13 @@ public class TextInputComponent extends JPanel {
         add(input);
     }
 
+    public JTextField getInput() {return input;}
 
     public String getInputText() {
         return input.getText();
     }
 
+    public JLabel getLabelText() {
+        return text;
+    }
 }
