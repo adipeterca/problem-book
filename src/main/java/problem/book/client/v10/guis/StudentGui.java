@@ -2,6 +2,7 @@ package problem.book.client.v10.guis;
 
 import jdk.jshell.execution.Util;
 import problem.book.client.v10.ProblemBookApp;
+import problem.book.client.v10.dtos.LoggedInDTO;
 import problem.book.client.v10.guis.utilities.DatabaseLinker;
 import problem.book.client.v10.guis.utilities.Utility;
 
@@ -17,10 +18,11 @@ import java.util.concurrent.Flow;
 public class StudentGui extends JFrame {
 
     private final JTextArea consoleLog = new JTextArea();
+    private final LoggedInDTO student = ProblemBookApp.getLoggedInDTO();
 
     public StudentGui() {
         // Set the name of tha application
-        setTitle("Problem Book");
+        setTitle("Problem Book - Student");
 
         // Make this window visible
         setVisible(true);
@@ -71,7 +73,7 @@ public class StudentGui extends JFrame {
         image.setBorder(BorderFactory.createLineBorder(Color.black, 5));
 
         JComboBox<String> avatarId = new JComboBox<>();
-        addAvatarItems(avatarId);
+        Utility.addAvatarItems(avatarId);
         avatarId.setFont(new Font("Arial", Font.PLAIN, 25));
 
         imagePanel.add(image);
@@ -226,17 +228,5 @@ public class StudentGui extends JFrame {
         rightPanel.add(consolePane);
 
         add(rightPanel);
-    }
-
-    /**
-     * Private method which constructs the avatar ID combo box.
-     * @param avatarId the combo box to be constructed
-     * @since version 1.0
-     */
-    private void addAvatarItems(JComboBox<String> avatarId) {
-        avatarId.addItem("Image 1");
-        avatarId.addItem("Image 2");
-        avatarId.addItem("Image 3");
-        avatarId.addItem("Image 4");
     }
 }
