@@ -3,22 +3,38 @@ package problem.book.client.v10.guis;
 import jdk.jshell.execution.Util;
 import problem.book.client.v10.ProblemBookApp;
 import problem.book.client.v10.dtos.LoggedInDTO;
+import problem.book.client.v10.dtos.ProblemDTO;
 import problem.book.client.v10.guis.utilities.DatabaseLinker;
 import problem.book.client.v10.guis.utilities.Utility;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 import javax.imageio.ImageIO;
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.Flow;
 
 public class StudentGui extends JFrame {
 
     private final JTextArea consoleLog = new JTextArea();
     private final LoggedInDTO student = ProblemBookApp.getLoggedInDTO();
+
+    private final JTextArea textField = new JTextArea();
+    // private ProblemDTO problemDTO = DatabaseLinker.getInstance().getProblem(1);
+    private ProblemDTO problemDTO = new ProblemDTO(1,1, "adipeterca@gmail.com", "test", "test", "test");
 
     public StudentGui() {
         // Set the name of tha application
@@ -68,13 +84,20 @@ public class StudentGui extends JFrame {
         JPanel textPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
 
-        BufferedImage bufferedImage = ImageIO.read(new File("C:\\Users\\Adrian\\Desktop\\1.png"));
+        BufferedImage bufferedImage = ImageIO.read(new File("C:\\Users\\Adrian\\Desktop\\" + student.getAvatarId() + ".png"));
         JLabel image = new JLabel(new ImageIcon(bufferedImage));
         image.setBorder(BorderFactory.createLineBorder(Color.black, 5));
 
         JComboBox<String> avatarId = new JComboBox<>();
         Utility.addAvatarItems(avatarId);
         avatarId.setFont(new Font("Arial", Font.PLAIN, 25));
+        avatarId.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int position = avatarId.getSelectedIndex() + 1;
+                DatabaseLinker.getInstance().updateAvatar(true, student.getId(), position);
+            }
+        });
 
         imagePanel.add(image);
         imagePanel.add(avatarId);
@@ -93,10 +116,38 @@ public class StudentGui extends JFrame {
         JButton sendEmail = new JButton("Send email");
         sendEmail.setFont(new Font("Arial", Font.BOLD, 50));
         sendEmail.setBorder(BorderFactory.createLineBorder(Color.black, 5));
+        sendEmail.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setMultiSelectionEnabled(false);
+                int result = fileChooser.showOpenDialog(null);
+
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+
+                    sendEmail(problemDTO.getTeacherEmail(),
+                            student.getEmail(),
+                            "Problem " + problemDTO.getId(),
+                            "My name is " + student.getName() + " and I resolved the problem " + problemDTO.getId() + ".",
+                            file);
+                }
+                else {
+                    appendConsoleLog("File selection aborted!");
+                }
+            }
+        });
 
         JButton logout = new JButton("Log out");
         logout.setFont(new Font("Arial", Font.BOLD, 50));
         logout.setBorder(BorderFactory.createLineBorder(Color.black, 5));
+        logout.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ProblemBookApp.setLoggedInDTO(null);
+                dispose();
+            }
+        });
 
         buttonPanel.add(sendEmail);
         buttonPanel.add(logout);
@@ -116,10 +167,8 @@ public class StudentGui extends JFrame {
      * @since version 1.0
      */
     private void displayCentralPanel() {
-        JTextArea textField = new JTextArea();
-
         textField.setEditable(false);
-        textField.setText(Utility.getDummyLongText());
+        textField.setText(problemDTO.getContent());
         textField.setLineWrap(true);
 
         textField.setFont(new Font("Arial", Font.PLAIN, 20));
@@ -155,14 +204,32 @@ public class StudentGui extends JFrame {
 
         JButton displayProblem = new JButton("  Display problem  ");
         displayProblem.setFont(new Font("Arial", Font.BOLD, 40));
+        displayProblem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textField.setText(problemDTO.getContent());
+            }
+        });
         // displayProblem.setBorder(BorderFactory.createLineBorder(Color.red, 5));
 
         JButton displayHint1 = new JButton("  Display first hint  ");
         displayHint1.setFont(new Font("Arial", Font.BOLD, 40));
+        displayHint1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textField.setText(problemDTO.getHint1());
+            }
+        });
         // displayHint1.setBorder(BorderFactory.createLineBorder(Color.green, 5));
 
         JButton displayHint2 = new JButton("  Display second hint  ");
         displayHint2.setFont(new Font("Arial", Font.BOLD, 40));
+        displayHint2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textField.setText(problemDTO.getHint2());
+            }
+        });
         // displayHint2.setBorder(BorderFactory.createLineBorder(Color.green, 5));
 
         FlowLayout displayLayout = new FlowLayout(FlowLayout.CENTER);
@@ -177,9 +244,23 @@ public class StudentGui extends JFrame {
 
         JButton next = new JButton("Next");
         next.setFont(new Font("Arial", Font.PLAIN, 30));
+        next.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                problemDTO = DatabaseLinker.getInstance().getNextProblem(problemDTO.getId());
+                textField.setText(problemDTO.getContent());
+            }
+        });
 
         JButton previous = new JButton("Previous");
         previous.setFont(new Font("Arial", Font.PLAIN, 30));
+        previous.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                problemDTO = DatabaseLinker.getInstance().getPreviousProblem(problemDTO.getId());
+                textField.setText(problemDTO.getContent());
+            }
+        });
 
         JPanel buttonsPanel = new JPanel();
         buttonsPanel.add(next);
@@ -194,6 +275,22 @@ public class StudentGui extends JFrame {
 
         JButton searchButton = new JButton("Search");
         searchButton.setFont(new Font("Arial", Font.PLAIN, 30));
+        searchButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int id;
+                try {
+                    id = Integer.parseInt(searchTextField.getText());
+                }
+                catch (NumberFormatException exception) {
+                    appendConsoleLog("Error! Invalid ID");
+                    return;
+                }
+                problemDTO = DatabaseLinker.getInstance().getProblem(id);
+                textField.setText(problemDTO.getContent());
+                appendConsoleLog("Problem with ID " + id + " received with success!");
+            }
+        });
 
         JPanel searchPanel = new JPanel();
         searchPanel.add(searchLabel);
@@ -228,5 +325,75 @@ public class StudentGui extends JFrame {
         rightPanel.add(consolePane);
 
         add(rightPanel);
+    }
+
+    private void sendEmail(String to, String from, String subject, String content, File attachment) {
+        Properties properties = System.getProperties();
+
+        // Setup mail server
+        properties.put("mail.smtp.host", "smtp.gmail.com");
+        properties.put("mail.smtp.port", "465");
+        properties.put("mail.smtp.ssl.enable", "true");
+        properties.put("mail.smtp.auth", "true");
+        properties.put("mail.smtp.socketFactory.port", "465");
+        properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+
+        // Get the Session object.// and pass username and password
+        Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
+
+            protected PasswordAuthentication getPasswordAuthentication() {
+                // problembookjava@gmail.com
+                return new PasswordAuthentication("problembookjava", "version1.0");
+
+            }
+
+        });
+
+        try {
+            // Create a default MimeMessage object.
+            MimeMessage message = new MimeMessage(session);
+
+            // Set From: header field of the header.
+            message.setFrom(new InternetAddress(from));
+
+            // Set To: header field of the header.
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+
+            // Set Subject: header field
+            message.setSubject(subject);
+
+            // Create the message part
+            BodyPart messageBodyPart = new MimeBodyPart();
+
+            // Fill the message
+            messageBodyPart.setText(content);
+
+            // Create a multipart message
+            Multipart multipart = new MimeMultipart();
+
+            // Set text message part
+            multipart.addBodyPart(messageBodyPart);
+
+            // Part two is attachment
+            messageBodyPart = new MimeBodyPart();
+            DataSource source = new FileDataSource(attachment);
+            messageBodyPart.setDataHandler(new DataHandler(source));
+            messageBodyPart.setFileName("problem");
+            multipart.addBodyPart(messageBodyPart);
+
+            // Send the complete message parts
+            message.setContent(multipart);
+
+            // Send message
+            Transport.send(message);
+            appendConsoleLog("Email sent successfully!");
+        } catch (MessagingException mex) {
+            mex.printStackTrace();
+            appendConsoleLog("Error! Could not send email!");
+        }
+    }
+
+    private void appendConsoleLog(String message) {
+        consoleLog.setText(consoleLog.getText() + ">>>" + message + "\n");
     }
 }

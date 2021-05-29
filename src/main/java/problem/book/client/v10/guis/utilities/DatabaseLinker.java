@@ -44,4 +44,32 @@ public class DatabaseLinker {
         }
         return null;
     }
+
+    public ProblemDTO getProblem(Integer id) {
+        var response = restTemplate.getForEntity("https://problem-book-database.herokuapp.com/problem/findById?id=" + id, ProblemDTO.class);
+        return response.getBody();
+    }
+
+    public ProblemDTO getNextProblem(Integer id) {
+        var response = restTemplate.getForEntity("https://problem-book-database.herokuapp.com/problem/findNext?id=" + id, ProblemDTO.class);
+        return response.getBody();
+    }
+
+    public ProblemDTO getPreviousProblem(Integer id) {
+        var response = restTemplate.getForEntity("https://problem-book-database.herokuapp.com/problem/findPrevious?id=" + id, ProblemDTO.class);
+        return response.getBody();
+    }
+
+    public void updateAvatar(boolean forStudent, Integer id, Integer avatarId) {
+        if (forStudent) {
+            restTemplate.put("https://problem-book-database.herokuapp.com/student?studentId" + id + "&avatarId=" + avatarId, Object.class);
+        }
+        else {
+            restTemplate.put("https://problem-book-database.herokuapp.com/teacher?teacherId" + id + "&avatarId=" + avatarId, Object.class);
+        }
+    }
+
+    public Integer addProblem(ProblemDTO problem) {
+        return restTemplate.postForObject("https://problem-book-database.herokuapp.com/problem/", problem, Integer.class);
+    }
 }

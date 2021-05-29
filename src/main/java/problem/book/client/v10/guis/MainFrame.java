@@ -1,6 +1,5 @@
 package problem.book.client.v10.guis;
 
-import org.springframework.beans.factory.parsing.Problem;
 import problem.book.client.v10.ProblemBookApp;
 import problem.book.client.v10.dtos.*;
 import problem.book.client.v10.guis.components.TextInputComponent;
@@ -21,7 +20,7 @@ public class MainFrame extends JFrame {
     // Components used by both the Login GUI and the Registration GUI
     private final JLabel title = new JLabel("", SwingConstants.CENTER);
     private final TextInputComponent name = new TextInputComponent(" Name ");
-    private final TextInputComponent specialField = new TextInputComponent(" Special field ");
+    private final TextInputComponent email = new TextInputComponent(" Special field ");
     private final TextInputComponent password = new TextInputComponent(" Password ", new JPasswordField());
     private final JLabel errorLabel = new JLabel("", SwingConstants.CENTER);
 
@@ -47,6 +46,8 @@ public class MainFrame extends JFrame {
     private final FlowLayout buttonsPanelLayout = new FlowLayout();
     private final JPanel buttonsPanel = new JPanel(buttonsPanelLayout);
 
+    // Other variables
+    private boolean isStudent;
     public MainFrame() {
         super("Problem Book");
 
@@ -71,9 +72,9 @@ public class MainFrame extends JFrame {
         errorLabel.setText("");
         name.getInput().setText("");
         password.getInput().setText("");
-        specialField.getInput().setText("");
+        email.getInput().setText("");
 
-        specialField.getLabelText().setText(" Special field ");
+        email.getLabelText().setText(" Email ");
 
         getContentPane().removeAll();
         setLayout(new GridLayout(7, 1));
@@ -82,7 +83,7 @@ public class MainFrame extends JFrame {
 
         add(title, BorderLayout.PAGE_START);
         add(name, BorderLayout.CENTER);
-        add(specialField, BorderLayout.CENTER);
+        add(email, BorderLayout.CENTER);
         add(password, BorderLayout.CENTER);
         add(loginPanel, BorderLayout.CENTER);
         add(registerPanel, BorderLayout.CENTER);
@@ -106,7 +107,7 @@ public class MainFrame extends JFrame {
 
         if (forStudents) {
             title.setText("Register as Student");
-            specialField.getLabelText().setText("Reg. Number");
+            email.getLabelText().setText("Email");
             register.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -116,7 +117,7 @@ public class MainFrame extends JFrame {
         }
         else {
             title.setText("Register as Teacher");
-            specialField.getLabelText().setText("Email");
+            email.getLabelText().setText("Email");
             register.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -127,7 +128,7 @@ public class MainFrame extends JFrame {
 
         add(title, BorderLayout.PAGE_START);
         add(name, BorderLayout.CENTER);
-        add(specialField, BorderLayout.CENTER);
+        add(email, BorderLayout.CENTER);
         add(password, BorderLayout.CENTER);
         add(passwordConfirm, BorderLayout.CENTER);
         add(avatarPanel, BorderLayout.CENTER);
@@ -163,7 +164,7 @@ public class MainFrame extends JFrame {
                     errorLabel.setText("Authenticated successfully!");
 
                     ProblemBookApp.setLoggedInDTO(loggedInDTO);
-                    ProblemBookApp.setIsStudent(verifyRegistrationNumber(specialField.getInputText()));
+                    ProblemBookApp.setIsStudent(isStudent);
                     dispose();
                 }
                 else {
@@ -245,7 +246,7 @@ public class MainFrame extends JFrame {
 
     private void registerStudentAction() {
         // Verify that all fields are written
-        if (name.getInputText().equals("") || specialField.getInputText().equals("") || password.getInputText().equals("") || passwordConfirm.getInputText().equals("")) {
+        if (name.getInputText().equals("") || email.getInputText().equals("") || password.getInputText().equals("") || passwordConfirm.getInputText().equals("")) {
             errorLabel.setText("Please fill out every field!");
             return;
         }
@@ -263,8 +264,8 @@ public class MainFrame extends JFrame {
         }
 
         // Verify that the register number is ok
-        if (!verifyRegistrationNumber(specialField.getInputText())) {
-            errorLabel.setText("The registration number is incorrect!");
+        if (!verifyEmail(email.getInputText())) {
+            errorLabel.setText("The email is incorrect!");
             return;
         }
 
@@ -290,7 +291,7 @@ public class MainFrame extends JFrame {
 
         // Register the student
         RegisterDTO registerDTO = new RegisterDTO(name.getInputText(),
-                specialField.getInputText(),
+                email.getInputText(),
                 hashPassword(password.getInputText()),
                 avatarBox.getSelectedIndex() + 1);
 
@@ -314,7 +315,7 @@ public class MainFrame extends JFrame {
 
     private void registerTeacherAction() {
         // Verify that all fields are written
-        if (name.getInputText().equals("") || specialField.getInputText().equals("") || password.getInputText().equals("") || passwordConfirm.getInputText().equals("")) {
+        if (name.getInputText().equals("") || email.getInputText().equals("") || password.getInputText().equals("") || passwordConfirm.getInputText().equals("")) {
             errorLabel.setText("Please fill out every field!");
             return;
         }
@@ -332,7 +333,7 @@ public class MainFrame extends JFrame {
         }
 
         // Verify that the email is ok
-        if (!verifyEmail(specialField.getInputText())) {
+        if (!verifyEmail(email.getInputText())) {
             errorLabel.setText("The email is incorrect!");
             return;
         }
@@ -359,7 +360,7 @@ public class MainFrame extends JFrame {
 
         // Register the teacher
         RegisterDTO registerDTO = new RegisterDTO(name.getInputText(),
-                specialField.getInputText(),
+                email.getInputText(),
                 hashPassword(password.getInputText()),
                 avatarBox.getSelectedIndex() + 1);
 
@@ -379,7 +380,7 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * Verifies that the given name and password do exist in the database. Searches either for students (if a valid RN was provided) or for teachers (if a valid email was provided).
+     * Verifies that the given name and password do exist in the database.
      * @param name the name used to log in
      * @param password the password used to log in
      * @return the student/teacher from the database or null if none found
@@ -388,10 +389,19 @@ public class MainFrame extends JFrame {
         LoginDTO loginDTO = new LoginDTO();
         loginDTO.setName(name);
         loginDTO.setHashPassword(hashPassword(password));
-        if (verifyRegistrationNumber(specialField.getInputText())) {
-            return DatabaseLinker.getInstance().loginStudent(loginDTO);
+
+        LoggedInDTO loggedInDTO = DatabaseLinker.getInstance().loginStudent(loginDTO);
+        if (loggedInDTO == null) {
+            loggedInDTO = DatabaseLinker.getInstance().loginTeacher(loginDTO);
+            if (loggedInDTO == null)
+                return null;
+            isStudent = false;
+            return loggedInDTO;
         }
-        return DatabaseLinker.getInstance().loginTeacher(loginDTO);
+        else {
+            isStudent = true;
+            return loggedInDTO;
+        }
     }
 
     /**
@@ -402,20 +412,6 @@ public class MainFrame extends JFrame {
      */
     private boolean verifyPasswordMatch(String pass1, String pass2) {
         return pass1.equals(pass2);
-    }
-
-    /**
-     * Verifies that a given registration number is correct.
-     * For the sake of simplicity, a correct registration number should have:
-     * - a length of 13 characters
-     * - the first 4 characters should be digits
-     * - the next 6 should be uppercase letters
-     * - the last 3 characters should be, in this order, '#0#'
-     * @param regNumber the registration number to be verified
-     * @return true if it is correct, false otherwise
-     */
-    private boolean verifyRegistrationNumber(String regNumber) {
-        return regNumber.matches("[0-9][0-9][0-9][0-9][A-Z][A-Z][A-Z][A-Z][A-Z][A-Z]#0#");
     }
 
     /**

@@ -2,12 +2,16 @@ package problem.book.client.v10.guis;
 
 import problem.book.client.v10.ProblemBookApp;
 import problem.book.client.v10.dtos.LoggedInDTO;
+import problem.book.client.v10.dtos.ProblemDTO;
+import problem.book.client.v10.guis.utilities.DatabaseLinker;
 import problem.book.client.v10.guis.utilities.Utility;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +19,10 @@ import java.io.IOException;
 public class TeacherGui extends JFrame {
     private final JTextArea consoleLog = new JTextArea();
     private final LoggedInDTO teacher = ProblemBookApp.getLoggedInDTO();
+
+    private final JTextArea textArea = new JTextArea();
+    private final JTextArea hint1Text = new JTextArea();
+    private final JTextArea hint2Text = new JTextArea();
 
     public TeacherGui() {
         // Set the name of tha application
@@ -60,13 +68,20 @@ public class TeacherGui extends JFrame {
         JPanel textPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
 
-        BufferedImage bufferedImage = ImageIO.read(new File("C:\\Users\\Adrian\\Desktop\\1.png"));
+        BufferedImage bufferedImage = ImageIO.read(new File("C:\\Users\\Adrian\\Desktop\\" + teacher.getAvatarId() + ".png"));
         JLabel image = new JLabel(new ImageIcon(bufferedImage));
         image.setBorder(BorderFactory.createLineBorder(Color.black, 5));
 
         JComboBox<String> avatarId = new JComboBox<>();
         Utility.addAvatarItems(avatarId);
         avatarId.setFont(new Font("Arial", Font.PLAIN, 25));
+        avatarId.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int position = avatarId.getSelectedIndex() + 1;
+                DatabaseLinker.getInstance().updateAvatar(true, teacher.getId(), position);
+            }
+        });
 
         imagePanel.add(image);
         imagePanel.add(avatarId);
@@ -85,10 +100,38 @@ public class TeacherGui extends JFrame {
         JButton addProblem = new JButton("Add");
         addProblem.setFont(new Font("Arial", Font.BOLD, 50));
         addProblem.setBorder(BorderFactory.createLineBorder(Color.black, 5));
+        addProblem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (textArea.getText().length() < 10) {
+                    appendConsoleLog("Error! The problem needs \nto have at least 10 characters.");
+                    return;
+                }
+                if (hint1Text.getText().length() == 0) {
+                    appendConsoleLog("Error! Hint 1 cannot be empty!");
+                    return;
+                }
+                if (hint2Text.getText().length() == 0) {
+                    appendConsoleLog("Error! Hint 2 cannot be empty!");
+                    return;
+                }
+
+                ProblemDTO problemDTO = new ProblemDTO(teacher.getId(), teacher.getEmail(), textArea.getText(), hint1Text.getText(), hint2Text.getText());
+                int id = DatabaseLinker.getInstance().addProblem(problemDTO);
+                appendConsoleLog("Added problem with ID " + id);
+            }
+        });
 
         JButton logout = new JButton("Log out");
         logout.setFont(new Font("Arial", Font.BOLD, 50));
         logout.setBorder(BorderFactory.createLineBorder(Color.black, 5));
+        logout.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ProblemBookApp.setLoggedInDTO(null);
+                dispose();
+            }
+        });
 
         buttonPanel.add(addProblem);
         buttonPanel.add(logout);
@@ -108,7 +151,6 @@ public class TeacherGui extends JFrame {
         title.setBorder(new EmptyBorder(20, 10, 20, 10));
         title.setFont(Utility.getFontText());
 
-        JTextArea textArea = new JTextArea();
         textArea.setLineWrap(true);
         textArea.setBorder(new EmptyBorder(45, 15, 15, 15));
         textArea.setFont(new Font("Arial", Font.PLAIN, 20));
@@ -129,7 +171,6 @@ public class TeacherGui extends JFrame {
         hint1Label.setBorder(new EmptyBorder(50, 40, 50, 40));
         hint1Label.setFont(Utility.getFontText());
 
-        JTextArea hint1Text = new JTextArea();
         hint1Text.setFont(new Font("Arial", Font.PLAIN, 25));
         hint1Text.setBorder(Utility.getTextBorder());
         hint1Text.setLineWrap(true);
@@ -145,7 +186,6 @@ public class TeacherGui extends JFrame {
         hint2Label.setBorder(new EmptyBorder(50, 40, 50, 40));
         hint2Label.setFont(Utility.getFontText());
 
-        JTextArea hint2Text = new JTextArea();
         hint2Text.setFont(new Font("Arial", Font.PLAIN, 25));
         hint2Text.setBorder(Utility.getTextBorder());
         hint2Text.setLineWrap(true);
@@ -180,5 +220,9 @@ public class TeacherGui extends JFrame {
         rightPanel.add(warning);
         rightPanel.add(consolePane);
         add(rightPanel);
+    }
+
+    private void appendConsoleLog(String message) {
+        consoleLog.setText(consoleLog.getText() + ">>>" + message + "\n");
     }
 }

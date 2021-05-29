@@ -1,17 +1,33 @@
 package problem.book.client.v10.dtos;
 
 public class LoggedInDTO {
+    private Integer id;
     private String name;
-    private String regNumber;
+    private String email;
     private Integer avatarId;
 
     public LoggedInDTO() {
     }
 
-    public LoggedInDTO(String name, String regNumber, Integer avatarId) {
+    public LoggedInDTO(String name, String email, Integer avatarId) {
         this.name = name;
-        this.regNumber = regNumber;
+        this.email = email;
         this.avatarId = avatarId;
+    }
+
+    public LoggedInDTO(Integer id, String name, String email, Integer avatarId) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.avatarId = avatarId;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -22,12 +38,12 @@ public class LoggedInDTO {
         this.name = name;
     }
 
-    public String getRegNumber() {
-        return regNumber;
+    public String getEmail() {
+        return email;
     }
 
-    public void setRegNumber(String regNumber) {
-        this.regNumber = regNumber;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public Integer getAvatarId() {

@@ -12,9 +12,9 @@ import javax.swing.*;
 public class Application {
 
 	public static void main(String[] args) {
-		// ProblemBookApp.startApplication();
+		ProblemBookApp.startApplication();
 		// StudentGui studentGui = new StudentGui();
-		TeacherGui teacherGui = new TeacherGui();
+		// TeacherGui teacherGui = new TeacherGui();
 	}
 
 }
