@@ -3,6 +3,9 @@ package problem.book.client.v10.dtos;
 public class AvatarDTO {
     private String url;
 
+    public AvatarDTO() {
+    }
+
     public AvatarDTO(String url) {
         this.url = url;
     }

@@ -68,34 +68,41 @@ public class TeacherGui extends JFrame {
         JPanel textPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
 
-        BufferedImage bufferedImage = ImageIO.read(new File("C:\\Users\\Adrian\\Desktop\\" + teacher.getAvatarId() + ".png"));
+        // BufferedImage bufferedImage = ImageIO.read(new File("C:\\Users\\Adrian\\Desktop\\" + teacher.getAvatarId() + ".png"));
+        BufferedImage bufferedImage = ImageIO.read(new File(DatabaseLinker.getInstance().getAvatarForId(teacher.getAvatarId()).getUrl()));
         JLabel image = new JLabel(new ImageIcon(bufferedImage));
         image.setBorder(BorderFactory.createLineBorder(Color.black, 5));
 
         JComboBox<String> avatarId = new JComboBox<>();
         Utility.addAvatarItems(avatarId);
         avatarId.setFont(new Font("Arial", Font.PLAIN, 25));
+        avatarId.setSelectedIndex(teacher.getAvatarId() - 1);
         avatarId.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int position = avatarId.getSelectedIndex() + 1;
-                DatabaseLinker.getInstance().updateAvatar(true, teacher.getId(), position);
+                if (DatabaseLinker.getInstance().updateAvatar(false, teacher.getId(), position)) {
+                    appendConsoleLog("Avatar changed! Reload the app\n to see it!");
+                }
+                else {
+                    appendConsoleLog("Could not change avatar!");
+                }
             }
         });
 
         imagePanel.add(image);
         imagePanel.add(avatarId);
 
-        JLabel name = new JLabel("Name: teacher test");
+        JLabel name = new JLabel("Name: " + teacher.getName());
         name.setFont(new Font("Arial", Font.PLAIN, 35));
         name.setBorder(Utility.getTextBorder());
 
-        JLabel registrationNumber = new JLabel("Email: teacher@teacher.com" );
-        registrationNumber.setFont(new Font("Arial", Font.PLAIN, 35));
-        registrationNumber.setBorder(Utility.getTextBorder());
+        JLabel email = new JLabel("Email: " + teacher.getEmail());
+        email.setFont(new Font("Arial", Font.PLAIN, 35));
+        email.setBorder(Utility.getTextBorder());
 
         textPanel.add(name);
-        textPanel.add(registrationNumber);
+        textPanel.add(email);
 
         JButton addProblem = new JButton("Add");
         addProblem.setFont(new Font("Arial", Font.BOLD, 50));
@@ -104,7 +111,7 @@ public class TeacherGui extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (textArea.getText().length() < 10) {
-                    appendConsoleLog("Error! The problem needs \nto have at least 10 characters.");
+                    appendConsoleLog("Error! The problem needs to have at least \n10 characters.");
                     return;
                 }
                 if (hint1Text.getText().length() == 0) {
@@ -116,9 +123,14 @@ public class TeacherGui extends JFrame {
                     return;
                 }
 
-                ProblemDTO problemDTO = new ProblemDTO(teacher.getId(), teacher.getEmail(), textArea.getText(), hint1Text.getText(), hint2Text.getText());
+                ProblemDTO problemDTO = new ProblemDTO(teacher.getId(), teacher.getEmail(), hint1Text.getText(), hint2Text.getText(), textArea.getText());
                 int id = DatabaseLinker.getInstance().addProblem(problemDTO);
                 appendConsoleLog("Added problem with ID " + id);
+
+                // Clear the added problem.
+                textArea.setText("");
+                hint1Text.setText("");
+                hint2Text.setText("");
             }
         });
 
@@ -207,8 +219,7 @@ public class TeacherGui extends JFrame {
         consoleLog.setEditable(false);
         consoleLog.setFont(new Font("Arial", Font.PLAIN, 20));
         consoleLog.setLineWrap(true);
-        consoleLog.setText("Console logs:\n");
-        consoleLog.setText(consoleLog.getText() + Utility.getDummyLongText());
+        appendConsoleLog("[START] Console logs:");
 
         JScrollPane consolePane = new JScrollPane(consoleLog);
         consolePane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);

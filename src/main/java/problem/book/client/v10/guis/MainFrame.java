@@ -20,13 +20,14 @@ public class MainFrame extends JFrame {
     // Components used by both the Login GUI and the Registration GUI
     private final JLabel title = new JLabel("", SwingConstants.CENTER);
     private final TextInputComponent name = new TextInputComponent(" Name ");
-    private final TextInputComponent email = new TextInputComponent(" Special field ");
     private final TextInputComponent password = new TextInputComponent(" Password ", new JPasswordField());
     private final JLabel errorLabel = new JLabel("", SwingConstants.CENTER);
 
     // Components used only by the Login GUI
     private final JButton login = new JButton("   Login   ");
     private final JPanel loginPanel = new JPanel();
+
+    private final JCheckBox checkBox = new JCheckBox(" As a teacher ");
 
     private final JButton registerStudent = new JButton(" Register as student ");
     private final JButton registerTeacher = new JButton(" Register as teacher ");
@@ -35,6 +36,7 @@ public class MainFrame extends JFrame {
 
     // Components used only by the Registration GUI
     private final TextInputComponent passwordConfirm = new TextInputComponent(" Confirm password ", new JPasswordField());
+    private final TextInputComponent email = new TextInputComponent(" Email ");
 
     private final JLabel avatarLabel = new JLabel(" Avatar ");
     private final JComboBox<String> avatarBox = new JComboBox<>();
@@ -47,7 +49,9 @@ public class MainFrame extends JFrame {
     private final JPanel buttonsPanel = new JPanel(buttonsPanelLayout);
 
     // Other variables
-    private boolean isStudent;
+    private boolean isStudent = false;
+    private boolean isRunning = true;
+
     public MainFrame() {
         super("Problem Book");
 
@@ -72,9 +76,6 @@ public class MainFrame extends JFrame {
         errorLabel.setText("");
         name.getInput().setText("");
         password.getInput().setText("");
-        email.getInput().setText("");
-
-        email.getLabelText().setText(" Email ");
 
         getContentPane().removeAll();
         setLayout(new GridLayout(7, 1));
@@ -83,8 +84,8 @@ public class MainFrame extends JFrame {
 
         add(title, BorderLayout.PAGE_START);
         add(name, BorderLayout.CENTER);
-        add(email, BorderLayout.CENTER);
         add(password, BorderLayout.CENTER);
+        add(checkBox, BorderLayout.CENTER);
         add(loginPanel, BorderLayout.CENTER);
         add(registerPanel, BorderLayout.CENTER);
         add(errorLabel, BorderLayout.CENTER);
@@ -166,6 +167,7 @@ public class MainFrame extends JFrame {
                     ProblemBookApp.setLoggedInDTO(loggedInDTO);
                     ProblemBookApp.setIsStudent(isStudent);
                     dispose();
+                    isRunning = false;
                 }
                 else {
                     errorLabel.setText("Error! Credentials are incorrect!");
@@ -177,6 +179,11 @@ public class MainFrame extends JFrame {
         // Login panel setup
         loginPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
         loginPanel.add(login);
+
+        // CheckBox setup
+        checkBox.setFont(new Font("Arial", Font.PLAIN, 25));
+        checkBox.setBorder(BorderFactory.createEmptyBorder(0, 120, 0, 50));
+        checkBox.setHorizontalTextPosition(JCheckBox.LEFT);
 
         // Register student button setup
         registerStudent.setFont(Utility.getFontButton());
@@ -215,8 +222,7 @@ public class MainFrame extends JFrame {
         // Avatar ComboBox setup
         avatarBox.setPreferredSize(Utility.getComboBoxDimension());
         avatarBox.setFont(Utility.getComboBoxFont());
-        avatarBox.addItem("Blank");
-        avatarBox.addItem("Smiley face");
+        Utility.addAvatarItems(avatarBox);
 
         // Avatar Panel setup
         avatarPanel.add(avatarLabel);
@@ -244,6 +250,9 @@ public class MainFrame extends JFrame {
 
     }
 
+    /**
+     * ActionListener for student registration
+     */
     private void registerStudentAction() {
         // Verify that all fields are written
         if (name.getInputText().equals("") || email.getInputText().equals("") || password.getInputText().equals("") || passwordConfirm.getInputText().equals("")) {
@@ -313,6 +322,9 @@ public class MainFrame extends JFrame {
         errorLabel.setText("Registration successful!");
     }
 
+    /**
+     * ActionListener for teacher registration
+     */
     private void registerTeacherAction() {
         // Verify that all fields are written
         if (name.getInputText().equals("") || email.getInputText().equals("") || password.getInputText().equals("") || passwordConfirm.getInputText().equals("")) {
@@ -390,15 +402,15 @@ public class MainFrame extends JFrame {
         loginDTO.setName(name);
         loginDTO.setHashPassword(hashPassword(password));
 
-        LoggedInDTO loggedInDTO = DatabaseLinker.getInstance().loginStudent(loginDTO);
-        if (loggedInDTO == null) {
-            loggedInDTO = DatabaseLinker.getInstance().loginTeacher(loginDTO);
-            if (loggedInDTO == null)
-                return null;
+        if (checkBox.isSelected()) {
+            LoggedInDTO loggedInDTO = DatabaseLinker.getInstance().loginTeacher(loginDTO);
+            if (loggedInDTO == null) return null;
             isStudent = false;
             return loggedInDTO;
         }
         else {
+            LoggedInDTO loggedInDTO = DatabaseLinker.getInstance().loginStudent(loginDTO);
+            if (loggedInDTO == null) return null;
             isStudent = true;
             return loggedInDTO;
         }
@@ -420,11 +432,11 @@ public class MainFrame extends JFrame {
      * @return true if it only contains letters, false otherwise
      */
     private boolean verifyName(String name) {
-        return name.matches("[a-zA-Z]+");
+        return name.matches("[a-zA-Z]+[ ]?[a-zA-Z]*");
     }
 
     private boolean verifyEmail(String email) {
-        return email.matches("[a-zA-Z0-9]+@[a-zA-Z0-9]+.[a-zA-Z0-9]+");
+        return email.matches("[a-zA-Z0-9._-]+@[a-zA-Z0-9]+.[a-zA-Z0-9]+");
     }
 
     private String hashPassword(String password) {
@@ -447,5 +459,9 @@ public class MainFrame extends JFrame {
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+
+    public boolean stillRunning() {
+        return isRunning;
     }
 }

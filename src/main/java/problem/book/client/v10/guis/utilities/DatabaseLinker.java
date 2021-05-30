@@ -1,5 +1,6 @@
 package problem.book.client.v10.guis.utilities;
 
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import problem.book.client.v10.dtos.*;
 
@@ -60,13 +61,18 @@ public class DatabaseLinker {
         return response.getBody();
     }
 
-    public void updateAvatar(boolean forStudent, Integer id, Integer avatarId) {
-        if (forStudent) {
-            restTemplate.put("https://problem-book-database.herokuapp.com/student?studentId" + id + "&avatarId=" + avatarId, Object.class);
+    public boolean updateAvatar(boolean forStudent, Integer id, Integer avatarId) {
+        try {
+            if (forStudent) {
+                restTemplate.put("https://problem-book-database.herokuapp.com/student/?studentId=" + id + "&avatarId=" + avatarId, null);
+            } else {
+                restTemplate.put("https://problem-book-database.herokuapp.com/teacher/?teacherId=" + id + "&avatarId=" + avatarId, null);
+            }
         }
-        else {
-            restTemplate.put("https://problem-book-database.herokuapp.com/teacher?teacherId" + id + "&avatarId=" + avatarId, Object.class);
+        catch (RestClientException exp) {
+            return false;
         }
+        return true;
     }
 
     public Integer addProblem(ProblemDTO problem) {

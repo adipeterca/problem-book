@@ -11,15 +11,15 @@ import problem.book.client.v10.guis.TeacherGui;
  */
 public class ProblemBookApp {
     private static boolean isStudent = false;
-    // private static LoggedInDTO loggedInDTO = null;
+    private static LoggedInDTO loggedInDTO = null;
 
     // TESTING
-    private static LoggedInDTO loggedInDTO = new LoggedInDTO("name", "adrian.peterca@yahoo.com", 1);
+    // private static LoggedInDTO loggedInDTO = new LoggedInDTO("name", "adrian.peterca@yahoo.com", 1);
 
     public static void startApplication() {
         MainFrame mainFrame = new MainFrame();
         // Wait until the main frame closes
-        while (mainFrame.isActive());
+        while (mainFrame.stillRunning() || loggedInDTO == null);
 
         if (isStudent) {
             StudentGui studentGui = new StudentGui();

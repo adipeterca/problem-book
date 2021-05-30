@@ -1,6 +1,5 @@
 package problem.book.client.v10.guis;
 
-import jdk.jshell.execution.Util;
 import problem.book.client.v10.ProblemBookApp;
 import problem.book.client.v10.dtos.LoggedInDTO;
 import problem.book.client.v10.dtos.ProblemDTO;
@@ -25,7 +24,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.concurrent.Flow;
 
 public class StudentGui extends JFrame {
 
@@ -33,8 +31,7 @@ public class StudentGui extends JFrame {
     private final LoggedInDTO student = ProblemBookApp.getLoggedInDTO();
 
     private final JTextArea textField = new JTextArea();
-    // private ProblemDTO problemDTO = DatabaseLinker.getInstance().getProblem(1);
-    private ProblemDTO problemDTO = new ProblemDTO(1,1, "adipeterca@gmail.com", "test", "test", "test");
+    private ProblemDTO problemDTO = DatabaseLinker.getInstance().getNextProblem(0);
 
     public StudentGui() {
         // Set the name of tha application
@@ -84,13 +81,14 @@ public class StudentGui extends JFrame {
         JPanel textPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
 
-        BufferedImage bufferedImage = ImageIO.read(new File("C:\\Users\\Adrian\\Desktop\\" + student.getAvatarId() + ".png"));
+        BufferedImage bufferedImage = ImageIO.read(new File(DatabaseLinker.getInstance().getAvatarForId(student.getAvatarId()).getUrl()));
         JLabel image = new JLabel(new ImageIcon(bufferedImage));
         image.setBorder(BorderFactory.createLineBorder(Color.black, 5));
 
         JComboBox<String> avatarId = new JComboBox<>();
         Utility.addAvatarItems(avatarId);
         avatarId.setFont(new Font("Arial", Font.PLAIN, 25));
+        avatarId.setSelectedIndex(student.getAvatarId() - 1);
         avatarId.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -99,19 +97,20 @@ public class StudentGui extends JFrame {
             }
         });
 
+
         imagePanel.add(image);
         imagePanel.add(avatarId);
 
-        JLabel name = new JLabel("Name: test");
+        JLabel name = new JLabel("Name: " + student.getName());
         name.setFont(new Font("Arial", Font.PLAIN, 35));
         name.setBorder(Utility.getTextBorder());
 
-        JLabel registrationNumber = new JLabel("Reg. Number: 1234ABCDEF#0#" );
-        registrationNumber.setFont(new Font("Arial", Font.PLAIN, 35));
-        registrationNumber.setBorder(Utility.getTextBorder());
+        JLabel email = new JLabel("Email: " + student.getEmail());
+        email.setFont(new Font("Arial", Font.PLAIN, 35));
+        email.setBorder(Utility.getTextBorder());
 
         textPanel.add(name);
-        textPanel.add(registrationNumber);
+        textPanel.add(email);
 
         JButton sendEmail = new JButton("Send email");
         sendEmail.setFont(new Font("Arial", Font.BOLD, 50));
@@ -190,13 +189,13 @@ public class StudentGui extends JFrame {
         layout.setVgap(20);
         JPanel rightPanel = new JPanel(layout);
 
-        JLabel problemId = new JLabel("Problem ID: 0000");
+        JLabel problemId = new JLabel("Problem ID: " + problemDTO.getId());
         problemId.setFont(new Font("Arial", Font.PLAIN, 40));
-        problemId.setBorder(Utility.getTextBorder());
+        problemId.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 100));
 
-        JLabel author = new JLabel("Author: Professor X");
+        JLabel author = new JLabel("Author's ID: " + problemDTO.getTeacherId());
         author.setFont(new Font("Arial", Font.PLAIN, 40));
-        author.setBorder(Utility.getTextBorder());
+        author.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 100));
 
         JPanel informationPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         informationPanel.add(problemId);
@@ -249,6 +248,9 @@ public class StudentGui extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 problemDTO = DatabaseLinker.getInstance().getNextProblem(problemDTO.getId());
                 textField.setText(problemDTO.getContent());
+                problemId.setText("Problem ID: " + problemDTO.getId());
+                author.setText("Author's ID: " + problemDTO.getTeacherId());
+                appendConsoleLog("Problem with ID " + problemDTO.getId() + " received with success!");
             }
         });
 
@@ -259,12 +261,15 @@ public class StudentGui extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 problemDTO = DatabaseLinker.getInstance().getPreviousProblem(problemDTO.getId());
                 textField.setText(problemDTO.getContent());
+                problemId.setText("Problem ID: " + problemDTO.getId());
+                author.setText("Author's ID: " + problemDTO.getTeacherId());
+                appendConsoleLog("Problem with ID " + problemDTO.getId() + " received with success!");
             }
         });
 
         JPanel buttonsPanel = new JPanel();
-        buttonsPanel.add(next);
         buttonsPanel.add(previous);
+        buttonsPanel.add(next);
 
         JLabel searchLabel = new JLabel("Search by id:");
         searchLabel.setFont(new Font("Arial", Font.PLAIN, 30));
@@ -286,8 +291,15 @@ public class StudentGui extends JFrame {
                     appendConsoleLog("Error! Invalid ID");
                     return;
                 }
-                problemDTO = DatabaseLinker.getInstance().getProblem(id);
+                ProblemDTO newProblem = DatabaseLinker.getInstance().getProblem(id);
+                if (newProblem == null) {
+                    appendConsoleLog("Could not find the problem with ID " + id + "!");
+                    return;
+                }
+                problemDTO = newProblem;
                 textField.setText(problemDTO.getContent());
+                problemId.setText("Problem ID: " + problemDTO.getId());
+                author.setText("Author's ID: " + problemDTO.getTeacherId());
                 appendConsoleLog("Problem with ID " + id + " received with success!");
             }
         });
@@ -308,8 +320,7 @@ public class StudentGui extends JFrame {
         consoleLog.setEditable(false);
         consoleLog.setFont(new Font("Arial", Font.PLAIN, 20));
         consoleLog.setLineWrap(true);
-        consoleLog.setText("Console logs:\n");
-        consoleLog.setText(consoleLog.getText() + Utility.getDummyLongText());
+        appendConsoleLog("[START] Console logs:");
 
         JScrollPane consolePane = new JScrollPane(consoleLog);
         consolePane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
