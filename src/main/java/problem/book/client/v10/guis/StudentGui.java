@@ -389,7 +389,7 @@ public class StudentGui extends JFrame {
             messageBodyPart = new MimeBodyPart();
             DataSource source = new FileDataSource(attachment);
             messageBodyPart.setDataHandler(new DataHandler(source));
-            messageBodyPart.setFileName("problem");
+            // messageBodyPart.setFileName("problem");
             multipart.addBodyPart(messageBodyPart);
 
             // Send the complete message parts
